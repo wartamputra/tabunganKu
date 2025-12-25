@@ -89,8 +89,12 @@
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h4 class="font-bold text-2xl mb-6 text-blue-800 uppercase border-b pb-2">Buat Transaksi</h4>
                 <div class="space-y-5">
+                    <!-- INPUT TANGGAL BARU -->
                     <div>
-                        <!-- Mengubah gaya label agar sama dengan judul (font-bold, text-xl, text-blue-800) -->
+                        <label class="block text-xl font-bold text-blue-800 tracking-wide">Tanggal Transaksi</label>
+                        <input type="date" id="tTanggal" class="w-full mt-2 border-2 border-gray-200 rounded-lg p-3 focus:border-blue-500 outline-none font-semibold text-base">
+                    </div>
+                    <div>
                         <label class="block text-xl font-bold text-blue-800 tracking-wide">Jenis Transaksi</label>
                         <select id="tJenis" class="w-full mt-2 border-2 border-gray-200 rounded-lg p-3 focus:border-blue-500 outline-none font-semibold text-base">
                             <option value="SIMPAN">Simpan</option>
@@ -98,7 +102,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xl font-bold text-blue-800 tracking-wide">Jumlah Uang (Rp)</label>
+                        <label class="block text-xl font-bold text-blue-800 tracking-wide">Jumlah Uang</label>
                         <input list="jumlahList" id="tJumlah" placeholder="Pilih atau ketik nominal..." class="w-full mt-2 border-2 border-gray-200 rounded-lg p-3 focus:border-blue-500 outline-none font-semibold text-base">
                         <datalist id="jumlahList"></datalist>
                     </div>
@@ -135,6 +139,12 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbxPPQQ8m4Ji4xS_AAOqb4hWsC-ZOuuJV7dyttHbu55wOhdJYRkFIq8u576Rua-pYt218A/exec"; 
 
         let currentUser = null;
+
+        // Set default tanggal ke hari ini saat load
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tTanggal').value = today;
+        }
 
         function toggleLoading(show) {
             document.getElementById('loading').style.display = show ? 'flex' : 'none';
@@ -176,6 +186,7 @@
             document.getElementById('dashboardPage').classList.remove('hidden');
             document.getElementById('userName').innerText = currentUser.nama;
             document.getElementById('userInfo').innerText = `${currentUser.kelas} | NIS: ${currentUser.nis}`;
+            setDefaultDate();
             await updateData();
             await loadDropdownOptions();
         }
@@ -232,9 +243,12 @@
         }
 
         async function saveTransaksi() {
+            const tanggal = document.getElementById('tTanggal').value;
             const jenis = document.getElementById('tJenis').value;
             const jumlah = document.getElementById('tJumlah').value;
             const keterangan = document.getElementById('tKet').value;
+            
+            if(!tanggal) return alert("Pilih tanggal transaksi!");
             if(!jumlah || jumlah <= 0) return alert("Masukkan nominal yang valid!");
             if(jenis === 'PAKAI' && !keterangan) return alert("Keterangan wajib diisi!");
             
@@ -242,13 +256,21 @@
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'createTransaksi', nis: currentUser.nis, jenis, jumlah, keterangan })
+                    body: JSON.stringify({ 
+                        action: 'createTransaksi', 
+                        nis: currentUser.nis, 
+                        jenis, 
+                        jumlah, 
+                        keterangan,
+                        tanggal // Payload tanggal baru
+                    })
                 });
                 const result = await response.json();
                 if(result.success) {
                     alert("Transaksi Berhasil!");
                     document.getElementById('tJumlah').value = '';
                     document.getElementById('tKet').value = '';
+                    setDefaultDate(); // Reset tanggal ke hari ini
                     await updateData();
                 } else {
                     alert("Gagal: " + result.message);
